@@ -1,7 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 class Settings(BaseSettings):
-    DATABASE_URL              : str = "postgresql+asyncpg://fintrack:secret@localhost:5432/fintrack"
+    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./fintrack.db", frozen=False)
     JWT_SECRET_KEY            : str = "changeme"
     ALGORITHM                 : str = "HS256"
     ACCESS_TOKEN_EXP_MINUTES  : int = 15
@@ -12,3 +13,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
+settings.DATABASE_URL = "sqlite+aiosqlite:///./fintrack.db"

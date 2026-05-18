@@ -18,6 +18,8 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db))
     existing = await db.execute(select(User).where(User.email == payload.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Email sudah terdaftar")
+    from app.models import Wallet, Category
+    
     user = User(
         id            = uuid.uuid4(),
         email         = payload.email,
@@ -25,6 +27,26 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db))
         full_name     = payload.full_name,
     )
     db.add(user)
+    
+    # Create default wallet
+    default_wallet = Wallet(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        name="Dompet Cash",
+        wallet_type="cash",
+        balance=0,
+        currency="IDR",
+        color="#4F46E5",
+        icon="wallet",
+        is_active=True
+    )
+    db.add(default_wallet)
+    
+    # Create some default categories
+    cat_income = Category(id=uuid.uuid4(), user_id=user.id, name="Gaji", type="income", icon="cash", color="#10B981")
+    cat_expense = Category(id=uuid.uuid4(), user_id=user.id, name="Makan", type="expense", icon="food", color="#EF4444")
+    db.add_all([cat_income, cat_expense])
+
     await db.commit()
     return {"message": "Registrasi berhasil", "user_id": str(user.id)}
 

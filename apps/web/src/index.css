@@ -1,10 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   html { -webkit-tap-highlight-color: transparent; }
-  body { @apply bg-slate-950 text-slate-100 antialiased; }
+  body { 
+    @apply bg-[#0f172a] text-slate-100 antialiased; 
+    font-family: 'Inter', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Outfit', sans-serif;
+  }
+  
   * { scrollbar-width: none; }
   *::-webkit-scrollbar { display: none; }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 shadow-xl;
+  }
+  .glass-card {
+    @apply bg-slate-800/60 backdrop-blur-md border border-slate-700 shadow-lg;
+  }
+  .glass-button {
+    @apply bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all active:scale-95;
+  }
 }

@@ -35,8 +35,8 @@ async def get_dashboard_summary(
         FROM transactions
         WHERE user_id = :u
           AND type IN ('income', 'expense')
-          AND EXTRACT(MONTH FROM transaction_date) = :m
-          AND EXTRACT(YEAR  FROM transaction_date) = :y
+          AND cast(strftime('%m', transaction_date) as integer) = :m
+          AND cast(strftime('%Y', transaction_date) as integer) = :y
         GROUP BY type
     """), {"u": user_id, "m": month, "y": year})
     income_mtd = expense_mtd = 0.0
@@ -51,8 +51,8 @@ async def get_dashboard_summary(
         JOIN categories c ON t.category_id = c.id
         WHERE t.user_id = :u
           AND t.type = 'expense'
-          AND EXTRACT(MONTH FROM t.transaction_date) = :m
-          AND EXTRACT(YEAR  FROM t.transaction_date) = :y
+          AND cast(strftime('%m', t.transaction_date) as integer) = :m
+          AND cast(strftime('%Y', t.transaction_date) as integer) = :y
         GROUP BY c.name, c.color
         ORDER BY total DESC
         LIMIT 8
@@ -64,12 +64,12 @@ async def get_dashboard_summary(
 
     # Monthly chart — last 6 months
     chart_rows = await db.execute(text("""
-        SELECT TO_CHAR(transaction_date, 'YYYY-MM') AS period,
+        SELECT strftime('%Y-%m', transaction_date) AS period,
                type, SUM(amount) AS total
         FROM transactions
         WHERE user_id = :u
           AND type IN ('income', 'expense')
-          AND transaction_date >= CURRENT_DATE - INTERVAL '6 months'
+          AND transaction_date >= date('now', '-6 months', 'start of month')
         GROUP BY period, type
         ORDER BY period
     """), {"u": user_id})
@@ -92,8 +92,8 @@ async def get_dashboard_summary(
                ON t.category_id = b.category_id
               AND t.user_id      = b.user_id
               AND t.type         = 'expense'
-              AND EXTRACT(MONTH FROM t.transaction_date) = b.period_month
-              AND EXTRACT(YEAR  FROM t.transaction_date) = b.period_year
+              AND cast(strftime('%m', t.transaction_date) as integer) = b.period_month
+              AND cast(strftime('%Y', t.transaction_date) as integer) = b.period_year
         WHERE b.user_id      = :u
           AND b.period_month = :m
           AND b.period_year  = :y

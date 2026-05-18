@@ -50,10 +50,13 @@ async def create_transaction(
     db.add(txn)
 
     # 5. Update saldo wallet
+    from decimal import Decimal
+    amount_dec = Decimal(str(payload.amount))
+    
     if payload.type == "income":
-        wallet.balance += payload.amount
+        wallet.balance += amount_dec
     elif payload.type == "expense":
-        wallet.balance -= payload.amount
+        wallet.balance -= amount_dec
     elif payload.type == "transfer":
         to_result = await db.execute(
             select(Wallet).where(
@@ -64,8 +67,8 @@ async def create_transaction(
         to_wallet = to_result.scalar_one_or_none()
         if not to_wallet:
             raise HTTPException(404, "Wallet tujuan tidak ditemukan")
-        wallet.balance    -= payload.amount
-        to_wallet.balance += payload.amount
+        wallet.balance    -= amount_dec
+        to_wallet.balance += amount_dec
 
     await db.commit()
     await db.refresh(txn)
