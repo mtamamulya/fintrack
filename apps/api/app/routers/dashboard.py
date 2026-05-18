@@ -7,6 +7,8 @@ from app.core.security import get_current_user_id
 from app.schemas import (DashboardSummary, WalletBalance, CategorySpend,
                          MonthlyDataPoint, BudgetStatus)
 
+import uuid
+
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
@@ -17,11 +19,12 @@ async def get_dashboard_summary(
 ):
     today        = date.today()
     month, year  = today.month, today.year
+    user_uuid_hex = uuid.UUID(user_id).hex
 
     # Wallet balances
     w_rows = await db.execute(
         text("SELECT id, name, wallet_type, balance, currency FROM wallets WHERE user_id=:u AND is_active"),
-        {"u": user_id}
+        {"u": user_uuid_hex}
     )
     wallets = [
         WalletBalance(wallet_id=str(r.id), name=r.name, wallet_type=r.wallet_type,
@@ -38,7 +41,7 @@ async def get_dashboard_summary(
           AND cast(strftime('%m', transaction_date) as integer) = :m
           AND cast(strftime('%Y', transaction_date) as integer) = :y
         GROUP BY type
-    """), {"u": user_id, "m": month, "y": year})
+    """), {"u": user_uuid_hex, "m": month, "y": year})
     income_mtd = expense_mtd = 0.0
     for r in mtd_rows.fetchall():
         if r.type == "income":  income_mtd  = float(r.total)
@@ -56,7 +59,7 @@ async def get_dashboard_summary(
         GROUP BY c.name, c.color
         ORDER BY total DESC
         LIMIT 8
-    """), {"u": user_id, "m": month, "y": year})
+    """), {"u": user_uuid_hex, "m": month, "y": year})
     category_spend = [
         CategorySpend(category_name=r.name, category_color=r.color, amount=float(r.total))
         for r in cat_rows.fetchall()
@@ -72,7 +75,7 @@ async def get_dashboard_summary(
           AND transaction_date >= date('now', '-6 months', 'start of month')
         GROUP BY period, type
         ORDER BY period
-    """), {"u": user_id})
+    """), {"u": user_uuid_hex})
     monthly_map: dict = {}
     for r in chart_rows.fetchall():
         entry = monthly_map.setdefault(r.period, {"income": 0.0, "expense": 0.0})
@@ -98,7 +101,7 @@ async def get_dashboard_summary(
           AND b.period_month = :m
           AND b.period_year  = :y
         GROUP BY b.amount_limit, b.warning_pct, c.name
-    """), {"u": user_id, "m": month, "y": year})
+    """), {"u": user_uuid_hex, "m": month, "y": year})
     budget_statuses = []
     for r in budget_rows.fetchall():
         spent = float(r.spent)
